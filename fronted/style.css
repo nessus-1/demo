@@ -1,0 +1,27 @@
+/* frontend/styles/style.css */
+body {
+  font-family: Arial, sans-serif;
+  margin: 30px;
+  background: #f9f9f9;
+}
+
+h1 {
+  color: #333;
+  margin-bottom: 20px;
+}
+
+table {
+  background: #fff;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th {
+  background: #007BFF;
+  color: #fff;
+}
+
+td, th {
+  padding: 10px;
+  text-align: left;
+}

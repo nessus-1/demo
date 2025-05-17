@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Управление цехами</title>
+  <style>
+    table, th, td { border: 1px solid black; border-collapse: collapse; }
+    th, td { padding: 8px; }
+    input[type="text"], input[type="number"] { width: 100%; }
+  </style>
+  <link rel="website icon " type="png" href="scripts/Комфорт.ico">
+</head>
+<style>
+  h1 {
+      font-weight: 700;
+      font-size: 2.5rem;
+      margin-bottom: 32px;
+      color: #1e40af;
+      text-shadow: 0 1px 3px rgba(30, 64, 175, 0.2);
+    }
+</style>
+<body>
+  <h1><img src="scripts/Комфорт.ico" alt=""width="90px">Комфорт
+  <h1>Управление цехами</h1>
+
+  <table id="workshops-table">
+    <thead>
+      <tr>
+        <th>Название</th>
+        <th>Количество работников</th>
+        <th>Действия</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h2 id="form-title">Добавить новый цех</h2>
+  <form id="workshop-form">
+    <input type="hidden" id="workshop-id" />
+    <label>
+      Название:<br />
+      <input type="text" id="workshop-name" required />
+    </label><br /><br />
+    <label>
+      Количество работников:<br />
+      <input type="number" id="workshop-workerCount" min="1" required />
+    </label><br /><br />
+    <button type="submit">Сохранить</button>
+    <button type="button" id="cancel-btn" style="display:none;">Отмена</button>
+  </form>
+<p style="margin-top: 20px;">
+  <button onclick="history.back()">← Вернуться назад</button>
+</p>
+  <script>
+    const apiBase = 'http://localhost:3000/api/workshops';
+
+    const tableBody = document.querySelector('#workshops-table tbody');
+    const form = document.getElementById('workshop-form');
+    const formTitle = document.getElementById('form-title');
+    const cancelBtn = document.getElementById('cancel-btn');
+
+    const inputId = document.getElementById('workshop-id');
+    const inputName = document.getElementById('workshop-name');
+    const inputWorkerCount = document.getElementById('workshop-workerCount');
+
+    // Загрузка списка цехов
+    async function loadWorkshops() {
+      const res = await fetch(apiBase);
+      const data = await res.json();
+      tableBody.innerHTML = '';
+      data.forEach(w => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${w.name}</td>
+          <td>${w.workerCount}</td>
+          <td>
+            <button data-id="${w._id}" class="edit-btn">Редактировать</button>
+            <button data-id="${w._id}" class="delete-btn">Удалить</button>
+          </td>
+        `;
+        tableBody.appendChild(row);
+      });
+      addTableEventListeners();
+    }
+
+    // Добавить обработчики кнопок редактирования и удаления
+    function addTableEventListeners() {
+      document.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.onclick = async () => {
+          const id = btn.dataset.id;
+          const res = await fetch(`${apiBase}/${id}`);
+          const workshop = await res.json();
+          inputId.value = workshop._id;
+          inputName.value = workshop.name;
+          inputWorkerCount.value = workshop.workerCount;
+          formTitle.textContent = 'Редактировать цех';
+          cancelBtn.style.display = 'inline';
+        };
+      });
+
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.onclick = async () => {
+          if (confirm('Удалить этот цех?')) {
+            const id = btn.dataset.id;
+            await fetch(`${apiBase}/${id}`, { method: 'DELETE' });
+            loadWorkshops();
+          }
+        };
+      });
+    }
+
+    // Отмена редактирования
+    cancelBtn.onclick = () => {
+      inputId.value = '';
+      inputName.value = '';
+      inputWorkerCount.value = '';
+      formTitle.textContent = 'Добавить новый цех';
+      cancelBtn.style.display = 'none';
+    };
+
+    // Обработка отправки формы (добавление или обновление)
+    form.onsubmit = async e => {
+      e.preventDefault();
+      const id = inputId.value;
+      const payload = {
+        name: inputName.value.trim(),
+        workerCount: Number(inputWorkerCount.value)
+      };
+      if (!payload.name || payload.workerCount < 1) {
+        alert('Пожалуйста, заполните корректно все поля');
+        return;
+      }
+
+      if (id) {
+        // Обновление
+        await fetch(`${apiBase}/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } else {
+        // Добавление
+        await fetch(apiBase, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
+      cancelBtn.onclick(); // сброс формы
+      loadWorkshops();
+    };
+
+    // Инициализация
+    loadWorkshops();
+  </script>
+</body>
+</html>

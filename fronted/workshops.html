@@ -1,0 +1,64 @@
+<h1>Информация о продукции</h1>
+<div id="product-info"></div>
+
+<h2>Цеха производства</h2>
+<table border="1" cellpadding="8" id="workshop-table">
+  <thead>
+    <tr>
+      <th>Название цеха</th>
+      <th>Количество работников</th>
+      <th>Время изготовления (часы)</th>
+    </tr>
+    <p><strong>Общее время изготовления:</strong> <span id="total-time"></span> часов</p>
+  </thead>
+  <tbody></tbody>
+</table>
+<p style="margin-top: 20px;">
+  <button onclick="history.back()">← Вернуться назад</button>
+</p>
+<script>
+  const params = new URLSearchParams(window.location.search);
+  let productId = params.get('id'); 
+
+  if (!productId) {
+    alert('Не передан ID продукта');
+    window.location.href = 'index.html';
+  }
+
+  productId = productId.split(':')[0];
+
+  fetch(`http://localhost:3000/api/workshops/product-info/${productId}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.error) {
+        alert('Ошибка: ' + data.error);
+        return;
+      }
+
+      // Вывод информации о продукте
+      const infoDiv = document.getElementById('product-info');
+      const p = data.product;
+      infoDiv.innerHTML = `
+        <p><strong>Наименование:</strong> ${p.name}</p>
+        <p><strong>Артикул:</strong> ${p.article}</p>
+        <p><strong>Минимальная цена:</strong> ${p.minPrice.toFixed(2)} ₽</p>
+        <p><strong>Материал:</strong> ${p.material}</p>
+      `;
+
+      // Вывод таблицы цехов
+      const tbody = document.querySelector('#workshop-table tbody');
+      data.workshops.forEach(w => {
+        const row = `<tr>
+          <td>${w.name}</td>
+          <td>${w.workerCount}</td>
+          <td>${w.timeHours}</td>
+        </tr>`;
+        tbody.innerHTML += row;
+      });
+    document.getElementById('total-time').textContent = data.totalTime.toFixed(2);
+    })
+    .catch(err => {
+      alert('Ошибка загрузки данных');
+      console.error(err);
+    });
+</script>
